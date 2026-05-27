@@ -68,11 +68,17 @@ export default function OperatorDashboard() {
 
     peer.onicecandidate = (event) => {
       if (event.candidate && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        console.log("Operator sending ICE candidate");
         wsRef.current.send(JSON.stringify({ type: 'signal', payload: event.candidate }));
       }
     };
 
+    peer.oniceconnectionstatechange = () => {
+      console.log("Operator ICE State:", peer.iceConnectionState);
+    };
+
     peer.ontrack = (event) => {
+      console.log("Operator received video track!");
       if (videoRef.current && event.streams[0]) {
         videoRef.current.srcObject = event.streams[0];
       }

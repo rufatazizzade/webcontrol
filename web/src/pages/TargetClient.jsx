@@ -89,11 +89,19 @@ export default function TargetClient() {
 
       peer.onicecandidate = (event) => {
         if (event.candidate && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          console.log("Target sending ICE candidate");
           wsRef.current.send(JSON.stringify({ type: 'signal', payload: event.candidate }));
         }
       };
 
-      stream.getTracks().forEach(track => peer.addTrack(track, stream));
+      peer.oniceconnectionstatechange = () => {
+        console.log("Target ICE State:", peer.iceConnectionState);
+      };
+
+      stream.getTracks().forEach(track => {
+        console.log("Target adding track:", track.kind);
+        peer.addTrack(track, stream);
+      });
 
       track.onended = () => {
         stopEverything();
