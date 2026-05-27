@@ -6,6 +6,26 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
+app.get('/api/turn', async (req, res) => {
+  try {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    
+    if (!accountSid || !authToken) {
+      return res.status(500).json({ error: 'Twilio credentials not configured on server' });
+    }
+
+    const twilio = require('twilio');
+    const client = twilio(accountSid, authToken);
+    
+    const token = await client.tokens.create();
+    res.json(token.iceServers);
+  } catch (err) {
+    console.error('Error generating TURN credentials:', err);
+    res.status(500).json({ error: 'Failed to generate TURN credentials' });
+  }
+});
+
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 

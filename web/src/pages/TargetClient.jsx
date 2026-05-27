@@ -69,21 +69,20 @@ export default function TargetClient() {
         }));
       }
 
-      const configuration = { 
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { 
-            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          },
-          { 
-            urls: 'turn:openrelay.metered.ca:80?transport=tcp',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          }
-        ] 
-      };
+      let iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+      try {
+        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8765';
+        const httpUrl = wsUrl.replace('ws://', 'http://').replace('wss://', 'https://').replace('/ws', '/api/turn');
+        const response = await fetch(httpUrl);
+        if (response.ok) {
+          const turnServers = await response.json();
+          iceServers = [...iceServers, ...turnServers];
+        }
+      } catch (e) {
+        console.error('Failed to fetch TURN servers', e);
+      }
+
+      const configuration = { iceServers };
       const peer = new RTCPeerConnection(configuration);
       peerRef.current = peer;
 
