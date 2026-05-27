@@ -7,6 +7,8 @@ export default function OperatorDashboard() {
   const [connected, setConnected] = useState(false);
   const [controlEnabled, setControlEnabled] = useState(false);
   const [remoteSize, setRemoteSize] = useState({ width: 1920, height: 1080 }); // Defaults, updated by metadata
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
   
   const videoRef = useRef(null);
   const wsRef = useRef(null);
@@ -51,7 +53,7 @@ export default function OperatorDashboard() {
     peerRef.current = peer;
 
     peer.onicecandidate = (event) => {
-      if (event.candidate && wsRef.current) {
+      if (event.candidate && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'signal', payload: event.candidate }));
       }
     };
@@ -152,6 +154,15 @@ export default function OperatorDashboard() {
     sendControl('scroll', { amount });
   };
 
+  const sendChatMessage = (e) => {
+    e.preventDefault();
+    if (!chatMessage.trim() || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    
+    wsRef.current.send(JSON.stringify({ type: 'chat', text: chatMessage }));
+    setChatHistory(prev => [...prev, { role: 'operator', text: chatMessage, time: new Date().toLocaleTimeString() }]);
+    setChatMessage('');
+  };
+
   // Keyboard mapping
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -231,6 +242,45 @@ export default function OperatorDashboard() {
           setControlEnabled={setControlEnabled} 
           connected={connected} 
         />
+
+        {/* Chat Section */}
+        <div className="chat-section mt-6 border-t pt-4">
+          <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4">Chat with User</h3>
+          
+          <div className="chat-history mb-4 max-h-40 overflow-y-auto flex flex-col gap-2 pr-2">
+            {chatHistory.length === 0 && (
+              <p className="text-xs italic opacity-40">No messages yet...</p>
+            )}
+            {chatHistory.map((msg, i) => (
+              <div key={i} className="bg-white/5 p-2 rounded text-xs">
+                <div className="flex justify-between opacity-50 mb-1">
+                  <span>Operator</span>
+                  <span>{msg.time}</span>
+                </div>
+                <div>{msg.text}</div>
+              </div>
+            ))}
+          </div>
+
+          <form onSubmit={sendChatMessage} className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="Type message..." 
+              value={chatMessage}
+              onChange={(e) => setChatMessage(e.target.value)}
+              disabled={!connected}
+              className="flex-grow text-xs"
+            />
+            <button 
+              type="submit" 
+              className="btn-primary py-1 px-3 text-xs"
+              disabled={!connected}
+            >
+              Send
+            </button>
+          </form>
+          <p className="text-[10px] mt-2 opacity-40">Message will appear as a transparent popup on the user's screen.</p>
+        </div>
       </div>
     </div>
   );

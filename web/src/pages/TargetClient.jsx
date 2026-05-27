@@ -74,7 +74,7 @@ export default function TargetClient() {
       peerRef.current = peer;
 
       peer.onicecandidate = (event) => {
-        if (event.candidate && wsRef.current) {
+        if (event.candidate && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: 'signal', payload: event.candidate }));
         }
       };

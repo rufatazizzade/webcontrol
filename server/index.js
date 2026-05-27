@@ -55,9 +55,16 @@ wss.on('connection', (ws) => {
       } else if (message.type === 'metadata') {
         if (!currentSession || !sessions[currentSession]) return;
         
-        // Forward metadata (like screen size): Target -> Operator
+        // Forward metadata (like screen size): Target <-> Operator
         if (currentRole === 'target' && sessions[currentSession].operator) {
           sessions[currentSession].operator.send(JSON.stringify(message));
+        }
+      } else if (message.type === 'chat') {
+        if (!currentSession || !sessions[currentSession]) return;
+
+        // Forward chat messages: Operator -> Agent
+        if (currentRole === 'operator' && sessions[currentSession].agent) {
+          sessions[currentSession].agent.send(JSON.stringify(message));
         }
       }
     } catch (err) {
