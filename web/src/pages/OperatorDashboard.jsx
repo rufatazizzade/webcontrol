@@ -67,7 +67,9 @@ export default function OperatorDashboard() {
     // Create and send offer
     const offer = await peer.createOffer({ offerToReceiveVideo: true });
     await peer.setLocalDescription(offer);
-    wsRef.current.send(JSON.stringify({ type: 'signal', payload: peer.localDescription }));
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'signal', payload: peer.localDescription }));
+    }
   };
 
   const disconnect = () => {
